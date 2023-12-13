@@ -1,0 +1,7 @@
+type MyReadonly2<T, K extends keyof T = never> = {
+  readonly [U in keyof T]: T[U]
+} & { 
+  readonly [U in keyof T as U extends K ? U : never]: T[U]
+} & {
+  [U in keyof T as U extends K ? never : K extends never ? never : U]: T[U]
+}
