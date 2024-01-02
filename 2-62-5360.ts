@@ -1,7 +1,7 @@
-type Includes<T extends any[], U, I extends any[] = []> = T extends [infer T0, ...infer TR]
+type Includes<T extends any[], U> = T extends [infer T0, ...infer TR]
 ? Equal<T0, U> extends true
   ? true
-  : Includes<TR, U, [...I, any]>
+  : Includes<TR, U>
 : false
 
 type Unique<T extends any[], U extends any[] = []> = T extends [infer T0, ...infer TR]
