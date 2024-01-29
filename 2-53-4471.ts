@@ -1,0 +1,5 @@
+type Zip<T extends any[], U extends any[]> = T extends [infer T0, ...infer TR]
+? U extends [infer U0, ...infer UR]
+  ? [[T0, U0], ...Zip<TR, UR>]
+  : []
+: []
