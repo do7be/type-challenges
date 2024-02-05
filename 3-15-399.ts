@@ -1,0 +1,5 @@
+type FilterOut<T extends any[], F> = T extends [infer T0, ...infer TR]
+? [T0] extends [F]
+  ? [...FilterOut<TR, F>]
+  : [T0, ...FilterOut<TR, F>]
+: []
