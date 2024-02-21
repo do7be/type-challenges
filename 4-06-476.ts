@@ -22,7 +22,7 @@ type SumForLoop<A extends string, B extends string, Carry extends boolean = fals
   : `${R}${SumForLoop<AR, BR>}`
 : never
 
-type Sum<A extends string | number | bigint, B extends string | number | bigint, AD extends string = ReverseString<`${A}`>, BD extends string = ReverseString<`${B}`>> = ReverseString<Hoge<AD, BD>> extends infer R
+type Sum<A extends string | number | bigint, B extends string | number | bigint, AD extends string = ReverseString<`${A}`>, BD extends string = ReverseString<`${B}`>> = ReverseString<SumForLoop<AD, BD>> extends infer R
 ? R extends ''
   ? '0'
   : R
