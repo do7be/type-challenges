@@ -13,8 +13,10 @@ type Hoge<T, K extends keyof T = keyof T> = [K] extends [never]
 type ForObject<T> = Merge<Hoge<T>>
 
 type ForTuple<T> = T extends [infer T0, ...infer TR]
-? T0 extends T0
-  ? [DistributeUnions<T0>, ...ForTuple<TR>]
+? DistributeUnions<T0> extends infer T02
+  ? T02 extends T02
+    ? [T02, ...ForTuple<TR>]
+    : never
   : never
 : []
 
