@@ -6,16 +6,39 @@ type SetProperty<T, K extends PropertyKey, V> = {
   [P in (keyof T) | K]: P extends K ? V : P extends keyof T ? T[P] : never
 }
 
-type SpecificToken = '{' | '}' | '[' | ']' | ':' | ',' | true | false | null
-type Token = SpecificToken | `${string}`
+type Space = '\n' | ' '
+type SpecificToken = '{' | '}' | '[' | ']' | ':' | ',' 
+type Primitive = true | false | null
+type Keyword<S, R extends string = ''> = S extends `${infer S0}${infer SR}`
+? S0 extends '"'
+  ? R extends ''
+    ? Keyword<SR, `${R}${S0}`>
+    : `${R}${S0}`
+  : Keyword<SR, `${R}${S0}`>
+: never
+
+type Token = SpecificToken | Primitive | `"${string}"`
 type ParseResult<T, K extends Token[]> = [T, K]
 type Tokenize<T extends string, S extends Token[] = []> = T extends `${infer T0}${infer TR}`
-? T0 extends SpecificToken
+? T0 extends Space
+  ? Tokenize<TR, S>
+  : T0 extends SpecificToken
   ? Tokenize<TR, [...S, T0]>
-  : Tokenize<TR, [...S, T0]> // TODO
+  : T extends `${Primitive}${string}`
+  ? T extends `true${infer TR2}`
+    ? Tokenize<TR2, [...S, true]>
+    : T extends `false${infer TR2}`
+    ? Tokenize<TR2, [...S, false]>
+    : T extends `null${infer TR2}`
+    ? Tokenize<TR2, [...S, null]>
+    : never
+  : T extends `${infer Str extends `"${any}"`}${string}`
+  ? T extends `${Str}${infer TR2}`
+    ? Tokenize<TR2, [...S, Keyword<T>]>
+    : never
+  : never
 : S
 
 type ParseLiteral<T extends Token[]> = ParseResult<any, T>
 
 type Parse<T extends string> = Pure<ParseLiteral<Tokenize<T>>[0]>
-
