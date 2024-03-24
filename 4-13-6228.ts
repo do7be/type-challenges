@@ -39,6 +39,14 @@ type Tokenize<T extends string, S extends Token[] = []> = T extends `${infer T0}
   : never
 : S
 
-type ParseLiteral<T extends Token[]> = ParseResult<any, T>
+type ParseLiteral<T extends Token[]> = T[0] extends Primitive
+? T[0] extends true
+  ? [true]
+  : T[0] extends false
+  ? [false]
+  : T[0] extends null
+  ? [null]
+  : never
+: ParseResult<any, T>
 
 type Parse<T extends string> = Pure<ParseLiteral<Tokenize<T>>[0]>
