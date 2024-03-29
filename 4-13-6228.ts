@@ -6,6 +6,8 @@ type SetProperty<T, K extends PropertyKey, V> = {
   [P in (keyof T) | K]: P extends K ? V : P extends keyof T ? T[P] : never
 }
 
+type Unescape<S extends string> = S extends `"${infer R}"` ? R : S
+
 type Space = '\n' | ' '
 type SpecificToken = '{' | '}' | '[' | ']' | ':' | ',' 
 type Primitive = true | false | null
@@ -18,7 +20,46 @@ type Keyword<S, R extends string = ''> = S extends `${infer S0}${infer SR}`
 : never
 
 type Token = SpecificToken | Primitive | `"${string}"`
-type ParseResult<T, K extends Token[]> = [T, K]
+
+type ParseResult<T extends Token[], R = {}> = T extends [infer T0, ...infer TR extends Token[]]
+? T0 extends '{'
+  ? ParseObject<TR, R>
+  : T0 extends '['
+  ? ParseArray<TR>
+  : never
+: never
+
+type ParseObject<T extends Token[], R = {}> = T extends [infer Key extends string, ':', infer Value, ...infer TR extends Token[]]
+? Value extends '['
+  ? ParseArray<TR> extends [infer RR, infer TokenR extends Token[]]
+    ? ParseObject<TokenR, SetProperty<R, Unescape<Key>, RR>>
+    : never
+  : ParseObject<TR, SetProperty<R, Unescape<Key>, Value extends string ? Unescape<Value> : Value>>
+: T extends [infer T0, ...infer TR extends Token[]]
+? T0 extends ','
+  ? ParseObject<TR, R>
+  : T0 extends '}'
+  ? [R, TR]
+  : never
+: never
+
+type ParseArray<T extends Token[], R extends any[] = []> = T extends [infer T0, ...infer TR extends Token[]]
+? T0 extends '{'
+  ? ParseObject<TR> extends [infer RR, infer TokenR extends Token[]]
+    ? ParseArray<TokenR, [...R, RR]>
+    : never
+  : T0 extends `"${any}"`
+  ? ParseArray<TR, [...R, Unescape<T0>]>
+  : T0 extends Primitive
+  ? ParseArray<TR, [...R, T0]>
+  : T extends [',', ...infer TRR extends Token[]]
+  ? ParseArray<TRR, R>
+  : T0 extends ']'
+  ? [R, TR]
+  : never
+: R
+
+
 type Tokenize<T extends string, S extends Token[] = []> = T extends `${infer T0}${infer TR}`
 ? T0 extends Space
   ? Tokenize<TR, S>
@@ -47,6 +88,6 @@ type ParseLiteral<T extends Token[]> = T[0] extends Primitive
   : T[0] extends null
   ? [null]
   : never
-: ParseResult<any, T>
+: ParseResult<T>
 
 type Parse<T extends string> = Pure<ParseLiteral<Tokenize<T>>[0]>
