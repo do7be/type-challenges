@@ -6,7 +6,21 @@ type SetProperty<T, K extends PropertyKey, V> = {
   [P in (keyof T) | K]: P extends K ? V : P extends keyof T ? T[P] : never
 }
 
-type Unescape<S extends string> = S extends `"${infer R}"` ? R : S
+type Unescape<S extends string> = S extends ''
+? S
+: S extends `\\r${infer R}`
+? `\r${Unescape<R>}` 
+: S extends `\\n${infer R}`
+? `\n${Unescape<R>}` 
+: S extends `\\b${infer R}`
+? `\b${Unescape<R>}` 
+: S extends `\\f${infer R}`
+? `\f${Unescape<R>}` 
+: S extends `${infer S0}${infer SR}`
+? `${S0}${Unescape<SR>}`
+: never
+
+type UnescapeStr<S extends string> = S extends `"${infer R}"` ? Unescape<R> : S
 
 type Space = '\n' | ' '
 type SpecificToken = '{' | '}' | '[' | ']' | ':' | ',' 
@@ -32,9 +46,9 @@ type ParseResult<T extends Token[], R = {}> = T extends [infer T0, ...infer TR e
 type ParseObject<T extends Token[], R = {}> = T extends [infer Key extends string, ':', infer Value, ...infer TR extends Token[]]
 ? Value extends '['
   ? ParseArray<TR> extends [infer RR, infer TokenR extends Token[]]
-    ? ParseObject<TokenR, SetProperty<R, Unescape<Key>, RR>>
+    ? ParseObject<TokenR, SetProperty<R, UnescapeStr<Key>, RR>>
     : never
-  : ParseObject<TR, SetProperty<R, Unescape<Key>, Value extends string ? Unescape<Value> : Value>>
+  : ParseObject<TR, SetProperty<R, UnescapeStr<Key>, Value extends string ? UnescapeStr<Value> : Value>>
 : T extends [infer T0, ...infer TR extends Token[]]
 ? T0 extends ','
   ? ParseObject<TR, R>
@@ -49,7 +63,7 @@ type ParseArray<T extends Token[], R extends any[] = []> = T extends [infer T0, 
     ? ParseArray<TokenR, [...R, RR]>
     : never
   : T0 extends `"${any}"`
-  ? ParseArray<TR, [...R, Unescape<T0>]>
+  ? ParseArray<TR, [...R, UnescapeStr<T0>]>
   : T0 extends Primitive
   ? ParseArray<TR, [...R, T0]>
   : T extends [',', ...infer TRR extends Token[]]
@@ -80,7 +94,9 @@ type Tokenize<T extends string, S extends Token[] = []> = T extends `${infer T0}
   : never
 : S
 
-type ParseLiteral<T extends Token[]> = T[0] extends Primitive
+type ParseLiteral<T extends Token[]> = [T[0]] extends [never]
+? never
+: T[0] extends Primitive
 ? T[0] extends true
   ? [true]
   : T[0] extends false
